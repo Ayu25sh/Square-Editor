@@ -10,14 +10,35 @@ interface FrameProps {
 export function Frame({ properties, currentBreakpoint, onBreakpointChange }: FrameProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [frameWidth, setFrameWidth] = useState(800);
+  const [frameWidth, setFrameWidth] = useState(breakpointRanges.lg.min);
+
+  useEffect(() => {
+    // Set initial width based on breakpoint
+    const initialWidth = currentBreakpoint === 'sm' 
+      ? breakpointRanges.sm.min 
+      : currentBreakpoint === 'md' 
+        ? breakpointRanges.md.min 
+        : breakpointRanges.lg.min;
+    setFrameWidth(initialWidth);
+  }, [currentBreakpoint]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing || !frameRef.current) return;
+
+      const frameRect = frameRef.current.getBoundingClientRect();
+      const containerRect = frameRef.current.parentElement?.getBoundingClientRect();
+      const maxWidth = containerRect?.width || 0;
       
-      const newWidth = e.clientX - frameRef.current.getBoundingClientRect().left;
-      setFrameWidth(Math.max(breakpointRanges.sm.min, newWidth));
+      const newWidth = Math.min(
+        maxWidth,
+        Math.max(
+          breakpointRanges.sm.min,
+          e.clientX - frameRect.left
+        )
+      ); 
+
+      setFrameWidth(newWidth);
       
       // Determine new breakpoint
       let newBreakpoint: Breakpoint = 'lg';
@@ -68,13 +89,18 @@ export function Frame({ properties, currentBreakpoint, onBreakpointChange }: Fra
           }}
         />
       </div>
+
       <div
-        className="absolute top-0 right-0 w-4 h-full cursor-ew-resize bg-transparent hover:bg-gray-200 transition-colors"
+        className="absolute top-0 right-0 w-4 h-full cursor-ew-resize bg-gray-200 hover:bg-gray-300 transition-colors flex items-center justify-center"
         onMouseDown={() => setIsResizing(true)}
-      />
-      <div className="absolute bottom-4 right-4 text-sm text-gray-600">
-        Width: {frameWidth}px ({currentBreakpoint})
+      >
+        <div className="w-0.5 h-8 bg-gray-400" />
       </div>
+
+      <div className="absolute bottom-4 right-4 text-sm text-gray-600">
+        Width: {Math.round(frameWidth)}px ({currentBreakpoint})
+      </div>
+
     </div>
   );
 }

@@ -23,15 +23,24 @@ export function ControlPanel({
     if (currentBreakpoint === 'lg') {
       newProperties.lg = {
         ...newProperties.lg,
-        ...(color !== undefined ? { color } : {}),
+        ...(color !== undefined && { color }),
         ...(size !== undefined && { size })
       };
     } else {
-      
-      if (!newProperties[currentBreakpoint]) {
-        newProperties[currentBreakpoint] = { color: '', size: 0 }; // Default values
-      }
 
+      // if (!newProperties[currentBreakpoint]) {
+      //   newProperties[currentBreakpoint] = { color: '', size: 0 }; // Default values
+      // }
+
+      // Initialize the breakpoint properties if they don't exist
+      if (!newProperties[currentBreakpoint]) {
+        const inheritedProps = currentBreakpoint === 'sm' 
+          ? properties.md || properties.lg 
+          : properties.lg;
+        newProperties[currentBreakpoint] = { ...inheritedProps };
+      }
+      
+      // Only update the specific property that changed
       newProperties[currentBreakpoint] = {
         ...newProperties[currentBreakpoint],
         ...(color !== undefined && { color }),
@@ -40,6 +49,10 @@ export function ControlPanel({
     }
     
     onPropertiesChange(newProperties);
+  };
+
+  const handleBreakpointChange = (newBreakpoint: Breakpoint) => {
+    onBreakpointChange(newBreakpoint);
   };
 
   const getCurrentProperties = () => {
@@ -52,25 +65,50 @@ export function ControlPanel({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
+
       <div className="flex items-center gap-2 mb-6">
         <Settings className="w-5 h-5 text-gray-600" />
         <h2 className="text-xl font-semibold">Control Panel</h2>
       </div>
 
       <div className="space-y-6">
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Breakpoint
           </label>
-          <select
-            value={currentBreakpoint}
-            onChange={(e) => onBreakpointChange(e.target.value as Breakpoint)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="sm">Small (320-640px)</option>
-            <option value="md">Medium (641-1024px)</option>
-            <option value="lg">Large (1025px+)</option>
-          </select>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleBreakpointChange('sm')}
+              className={`flex-1 px-4 py-2 rounded-md ${
+                currentBreakpoint === 'sm'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              Small
+            </button>
+            <button
+              onClick={() => handleBreakpointChange('md')}
+              className={`flex-1 px-4 py-2 rounded-md ${
+                currentBreakpoint === 'md'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              Medium
+            </button>
+            <button
+              onClick={() => handleBreakpointChange('lg')}
+              className={`flex-1 px-4 py-2 rounded-md ${
+                currentBreakpoint === 'lg'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              Large
+            </button>
+          </div>
         </div>
 
         <div>
@@ -109,12 +147,22 @@ export function ControlPanel({
           </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Properties (JSON)
+          </label>
+          <pre className="bg-gray-50 p-4 rounded-md overflow-x-auto text-sm">
+            {JSON.stringify(properties, null, 2)}
+          </pre>
+        </div>
+
         {currentBreakpoint !== 'lg' && (
           <p className="text-sm text-gray-500 italic">
             * Properties will inherit from larger breakpoints if not set
           </p>
         )}
       </div>
+      
     </div>
   );
 }
